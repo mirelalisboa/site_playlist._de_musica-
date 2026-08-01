@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadência — Playlists</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">
+      <span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>
+    </span>
+    <span class="brand-name">Cadência</span>
+  </div>
+  <button class="btn btn-primary" id="btnNovaPlaylist" type="button">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2V14M2 8H14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    Nova playlist
+  </button>
+</header>
+
+<main class="app-main">
+
+  <!-- VISÃO: GRADE DE PLAYLISTS -->
+  <section id="viewGrade" class="view">
+    <div class="view-header">
+      <div>
+        <p class="eyebrow">Sua coleção</p>
+        <h1>Playlists</h1>
+      </div>
+    </div>
+
+    <div id="estadoCarregando" class="estado-vazio" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Carregando playlists…</p>
+    </div>
+
+    <div id="estadoErro" class="estado-vazio estado-erro" hidden>
+      <p class="estado-titulo">Não foi possível carregar suas playlists</p>
+      <p class="estado-detalhe" id="estadoErroDetalhe"></p>
+      <button class="btn btn-secondary" id="btnTentarNovamente" type="button">Tentar novamente</button>
+    </div>
+
+    <div id="estadoVazio" class="estado-vazio" hidden>
+      <p class="estado-titulo">Ainda não há nenhuma playlist</p>
+      <p class="estado-detalhe">Crie a primeira para começar a organizar suas músicas.</p>
+      <button class="btn btn-primary" id="btnCriarPrimeira" type="button">Criar playlist</button>
+    </div>
+
+    <div id="gradePlaylists" class="grade-playlists"></div>
+  </section>
+
+  <!-- VISÃO: DETALHE DA PLAYLIST -->
+  <section id="viewDetalhe" class="view" hidden>
+    <button class="btn-voltar" id="btnVoltar" type="button">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8L10 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Playlists
+    </button>
+
+    <div class="detalhe-header">
+      <div class="capa-grande" id="capaDetalhe" aria-hidden="true">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="1.6"/><circle cx="18" cy="16" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+      </div>
+      <div class="detalhe-info">
+        <p class="eyebrow" id="detalheVisibilidade">Playlist</p>
+        <h1 id="detalheNome">—</h1>
+        <p class="detalhe-descricao" id="detalheDescricao"></p>
+        <p class="detalhe-meta" id="detalheMeta"></p>
+        <div class="detalhe-acoes">
+          <button class="btn btn-primary btn-sm" id="btnAdicionarMusica" type="button">+ Adicionar música</button>
+          <button class="btn btn-secondary btn-sm" id="btnEditarPlaylist" type="button">Editar</button>
+          <button class="btn btn-danger-ghost btn-sm" id="btnDeletarPlaylist" type="button">Excluir</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="detalheEstadoVazio" class="estado-vazio estado-vazio-musicas" hidden>
+      <p class="estado-titulo">Nenhuma música por aqui ainda</p>
+      <p class="estado-detalhe">Adicione a primeira faixa desta playlist.</p>
+    </div>
+
+    <ol class="lista-musicas" id="listaMusicas"></ol>
+  </section>
+
+</main>
+
+<!-- PLAYER FIXO -->
+<footer class="player" id="player" hidden>
+  <audio id="audioEl" preload="metadata"></audio>
+  <div class="player-faixa">
+    <div class="player-capa" aria-hidden="true">
+      <span class="eq eq-tocando" id="eqAnim"><span></span><span></span><span></span></span>
+    </div>
+    <div class="player-textos">
+      <p class="player-titulo" id="playerTitulo">—</p>
+      <p class="player-artista" id="playerArtista">—</p>
+    </div>
+  </div>
+
+  <div class="player-centro">
+    <button class="btn-icone btn-play" id="btnPlayPause" type="button" aria-label="Tocar">
+      <svg id="iconePlay" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5z"/></svg>
+      <svg id="iconePause" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" hidden><rect x="3.5" y="2.5" width="3" height="11" rx="0.5"/><rect x="9.5" y="2.5" width="3" height="11" rx="0.5"/></svg>
+    </button>
+    <div class="player-progresso">
+      <span class="tempo" id="tempoAtual">0:00</span>
+      <div class="onda" id="ondaProgresso"></div>
+      <span class="tempo" id="tempoTotal">0:00</span>
+    </div>
+  </div>
+
+  <div class="player-volume">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 6h2.5L9 3v10L4.5 10H2z" fill="currentColor"/><path d="M11 5.5c1 1 1 4 0 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    <input type="range" id="volumeSlider" min="0" max="100" value="80" aria-label="Volume">
+  </div>
+</footer>
+
+<!-- MODAL: CRIAR / EDITAR PLAYLIST -->
+<div class="modal-backdrop" id="modalPlaylistBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalPlaylistTitulo">
+    <div class="modal-header">
+      <h2 id="modalPlaylistTitulo">Nova playlist</h2>
+      <button class="btn-fechar" id="fecharModalPlaylist" type="button" aria-label="Fechar">✕</button>
+    </div>
+    <form id="formPlaylist" novalidate>
+      <div class="campo">
+        <label for="inputNome">Nome</label>
+        <input type="text" id="inputNome" maxlength="100" placeholder="Ex.: Foco para trabalhar" autocomplete="off">
+        <p class="campo-erro" id="erroNome"></p>
+      </div>
+      <div class="campo">
+        <label for="inputDescricao">Descrição <span class="opcional">(opcional)</span></label>
+        <textarea id="inputDescricao" rows="3" maxlength="300" placeholder="Do que se trata essa playlist?"></textarea>
+      </div>
+      <label class="campo-check">
+        <input type="checkbox" id="inputPublica">
+        <span>Tornar esta playlist pública</span>
+      </label>
+      <div class="modal-acoes">
+        <button type="button" class="btn btn-secondary" id="cancelarModalPlaylist">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="salvarModalPlaylist">Criar playlist</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: ADICIONAR MÚSICA -->
+<div class="modal-backdrop" id="modalMusicaBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalMusicaTitulo">
+    <div class="modal-header">
+      <h2 id="modalMusicaTitulo">Adicionar música</h2>
+      <button class="btn-fechar" id="fecharModalMusica" type="button" aria-label="Fechar">✕</button>
+    </div>
+    <form id="formMusica" novalidate>
+      <div class="campo">
+        <label for="inputTitulo">Título</label>
+        <input type="text" id="inputTitulo" maxlength="150" placeholder="Ex.: Águas de Março" autocomplete="off">
+        <p class="campo-erro" id="erroTitulo"></p>
+      </div>
+      <div class="campo">
+        <label for="inputArtista">Artista</label>
+        <input type="text" id="inputArtista" maxlength="150" placeholder="Ex.: Elis Regina" autocomplete="off">
+        <p class="campo-erro" id="erroArtista"></p>
+      </div>
+
+      <div class="campo">
+        <label>Fonte do áudio</label>
+        <div class="segmento">
+          <button type="button" class="segmento-opcao is-ativo" id="tabUrl" data-modo="url">Link (URL)</button>
+          <button type="button" class="segmento-opcao" id="tabArquivo" data-modo="arquivo">Arquivo local</button>
+        </div>
+      </div>
+
+      <div class="campo" id="blocoUrl">
+        <label for="inputUrl">URL do áudio</label>
+        <input type="text" id="inputUrl" placeholder="https://exemplo.com/musica.mp3" autocomplete="off">
+        <p class="campo-erro" id="erroUrl"></p>
+      </div>
+
+      <div class="campo" id="blocoArquivo" hidden>
+        <label for="inputArquivo">Arquivo de áudio</label>
+        <input type="file" id="inputArquivo" accept="audio/*">
+        <p class="campo-ajuda">O arquivo toca apenas nesta sessão do navegador (não é enviado ao servidor).</p>
+        <p class="campo-erro" id="erroArquivo"></p>
+      </div>
+
+      <div class="modal-acoes">
+        <button type="button" class="btn btn-secondary" id="cancelarModalMusica">Cancelar</button>
+        <button type="submit" class="btn btn-primary" id="salvarModalMusica">Adicionar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRMAÇÃO -->
+<div class="modal-backdrop" id="modalConfirmarBackdrop" hidden>
+  <div class="modal modal-pequeno" role="alertdialog" aria-modal="true" aria-labelledby="confirmarTitulo">
+    <div class="modal-header">
+      <h2 id="confirmarTitulo">Confirmar exclusão</h2>
+    </div>
+    <p class="confirmar-texto" id="confirmarTexto">Tem certeza?</p>
+    <div class="modal-acoes">
+      <button type="button" class="btn btn-secondary" id="cancelarConfirmar">Cancelar</button>
+      <button type="button" class="btn btn-danger" id="confirmarConfirmar">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
